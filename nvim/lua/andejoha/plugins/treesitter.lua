@@ -2,47 +2,57 @@ return {
 	"nvim-treesitter/nvim-treesitter",
 	event = { "BufReadPre", "BufNewFile" },
 	build = ":TSUpdate",
-	dependencies = { "windwp/nvim-ts-autotag" },
+	lazy = false,
+	dependencies = {
+		{
+			"windwp/nvim-ts-autotag",
+			config = function()
+				require("nvim-ts-autotag").setup()
+			end,
+		},
+	},
 	config = function()
-		require("nvim-treesitter.configs").setup({
-			-- A list of parser names, or "all" (the five listed parsers should always be installed)
-			ensure_installed = {
-				"c",
-				"lua",
-				"vim",
-				"vimdoc",
-				"query",
-				"c_sharp",
-				"javascript",
-				"typescript",
-				"html",
-				"json",
-				"css",
-				"python",
-			},
+		local ensure_installed = {
+			"c",
+			"lua",
+			"vim",
+			"vimdoc",
+			"query",
+			"c_sharp",
+			"javascript",
+			"typescript",
+			"tsx",
+			"html",
+			"json",
+			"css",
+			"python",
+			"markdown",
+			"markdown_inline",
+		}
 
-			-- Install parsers synchronously (only applied to `ensure_installed`)
-			sync_install = false,
+		require("nvim-treesitter").install(ensure_installed)
 
-			-- Automatically install missing parsers when entering buffer
-			-- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-			auto_install = true,
+		local ts_filetypes = {}
+		for _, lang in ipairs(ensure_installed) do
+			vim.list_extend(ts_filetypes, vim.treesitter.language.get_filetypes(lang))
+		end
 
-			indend = { enable = true },
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = ts_filetypes,
+			callback = function(args)
+				local bufnr = args.buf
 
-			-- enable autotagging (/w nvim-ts-autotag plugin)
-			autotag = { enable = true },
+				pcall(vim.treesitter.start, bufnr)
 
-			highlight = {
-				-- `false` will disable the whole extension
-				enable = true,
+				local lang = vim.treesitter.language.get_lang(vim.bo[bufnr].filetype)
+				if lang and lang ~= "markdown" then
+					vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+				end
 
-				-- Setting this to true will run `:h syntax` and tree-sitter at the same time.:
-				-- Set this to `true` if you depend on "syntax" being enabled (like for indentation).
-				-- Using this option may slow down your editor, and you may see some duplicate highlights.
-				-- Instead of true it can also be a list of languages
-				additional_vim_regex_highlighting = { "markdown" },
-			},
+				if vim.bo[bufnr].filetype == "markdown" then
+					vim.bo[bufnr].syntax = "ON"
+				end
+			end,
 		})
 	end,
 }
