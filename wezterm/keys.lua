@@ -48,6 +48,21 @@ function M.apply(config)
 			mods = "LEADER",
 			action = wezterm.action_callback(layouts.dev_layout),
 		},
+		{
+			-- Jump back a word (Option+Left). Sent as Meta+b (ESC b) instead of
+			-- the default CSI sequence, since zsh/bash don't bind that sequence
+			-- to backward-word out of the box, causing stray "D" chars to be typed.
+			key = "LeftArrow",
+			mods = "OPT",
+			action = act.SendString("\x1bb"),
+		},
+		{
+			-- Jump forward a word (Option+Right). Sent as Meta+f (ESC f), the
+			-- counterpart to the LeftArrow binding above.
+			key = "RightArrow",
+			mods = "OPT",
+			action = act.SendString("\x1bf"),
+		},
 	}
 
 	for i = 1, 4 do
